@@ -53,7 +53,8 @@ if __name__ == '__main__':
         neg = neg[idx]
         full_train_data = np.concatenate((pos, neg))
     else:
-        full_train_data = np.load('dataset/'+dataset+'.npy')
+        # full_train_data = np.load('dataset/'+dataset+'.npy')
+        full_train_data = np.load('datasets/sine_cpx.npy.')
 
     N, T, D = full_train_data.shape
     # valid_perc = 0.2
@@ -103,7 +104,7 @@ if __name__ == '__main__':
         dropout=0.2
     )
 
-    discriminator = networks.discriminator(input_shape=latent)
+    discriminator = networks.discriminator(input_shape=latent, hidden_unit=32)
 
     ae_schedule = PolynomialDecay(initial_learning_rate=0.005, decay_steps=300, end_learning_rate=0.0025, power=0.5)
     dc_schedule = PolynomialDecay(initial_learning_rate=0.001, decay_steps=300, end_learning_rate=0.0001, power=0.5)

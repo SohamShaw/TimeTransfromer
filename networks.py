@@ -14,11 +14,12 @@ def timesformer_layer(tcn_inputs, trans_inputs, head_size, num_heads, filters, k
     )(trans_inputs, trans_inputs)
     x = Dropout(dropout)(x)
     x = LayerNormalization(epsilon=1e-06)(x)
+    #residual connection
     res = x + trans_inputs
     x = Conv1D(filters, kernel_size=1, activation='relu')(res)
     x = LayerNormalization(epsilon=1e-6)(x)
     trans_out = x + res
-    #Cross Attention
+    #Bi directional Cross Attention
     x = MultiHeadAttention(
         key_dim=head_size, num_heads=num_heads, dropout=dropout
     )(trans_out, tcn_out)
@@ -38,10 +39,18 @@ def timesformer_layer(tcn_inputs, trans_inputs, head_size, num_heads, filters, k
 def timesformer_dec(input_shape, ts_shape, head_size, num_heads, n_filters, k_size, dilations, dropout=0.0):
     inputs = Input(input_shape)
     x = inputs
+
     # De-Conv
-    cnn_dim = n_filters[0] * ts_shape[0]/(2**len(n_filters))
+
+    #n_filters[0]: number of filters in the first convolutional layer
+    #ts_shape[0]: length of the time series
+    #ts_shape[1]: representing the dimensionality of each time series element.
+    #2**len(n_filters: total upsampling factor
+    cnn_dim = n_filters[0] * ts_shape[0]/(2**len(n_filters)) #
+    #number of features after the initial dense layer, taking into account the upsampling factor
     ts_len = ts_shape[0]
     ts_dim = ts_shape[1]
+
     x = Dense(cnn_dim, activation='relu')(x)
     x = Reshape((-1, n_filters[0]))(x)
     for f in n_filters[1:]:
@@ -51,6 +60,7 @@ def timesformer_dec(input_shape, ts_shape, head_size, num_heads, n_filters, k_si
     x = Dense(ts_dim * ts_len)(x)
     res = Reshape((ts_len, ts_dim))(x)
 
+    #Time Timesformer layers
     tcn, trans = res, res
     for d in dilations:
         tcn, trans = timesformer_layer(tcn, trans, head_size, num_heads, ts_dim, k_size, d, dropout)
@@ -63,6 +73,7 @@ def timesformer_dec(input_shape, ts_shape, head_size, num_heads, n_filters, k_si
 
 
 def cnn_enc(input_shape, latent_dim, n_filters, k_size, dropout=0.0):
+    # Model for encoding a timeseries into a latent representation
     inputs = Input(shape=input_shape)
     x = inputs
     for f in n_filters:
@@ -128,11 +139,17 @@ def cautrans_dec(input_shape, ts_shape, n_block, head_size, num_heads, n_filters
     outputs = x + res if n_block == 0 else x
     return Model(inputs, outputs, name='decoder')
 
+
 def discriminator(input_shape, hidden_unit, dropout=0.3):
+    #size of the feature space for each input sample
     inputs = Input(input_shape)
+    #hidden_unit: The number of units/neurons in the hidden layers of the discriminator
     x = Dense(hidden_unit, activation='relu')(inputs)
     x = Dropout(dropout)(x)
+    #second hidden layer with hidden_unit neurons.
     x = Dense(hidden_unit, activation='relu')(x)
     x = Dropout(dropout)(x)
+    #final dense layer with one neuron and no activation function
     outputs = Dense(1)(x)
+    #outputs the discriminator's prediction
     return Model(inputs, outputs, name='discriminator')

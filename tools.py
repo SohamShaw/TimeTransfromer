@@ -1,6 +1,7 @@
 import numpy as np
 import tensorflow as tf
-from keras.utils import io_utils
+# from keras.utils import io_utils
+from tensorflow.keras import utils
 from tensorflow.keras import backend as K
 from tensorflow.python.platform import tf_logging as logging
 
@@ -30,6 +31,7 @@ class MinMaxScaler():
         return data
 
 
+#define custom callback for adapting training parameters based on monitored metrics
 class DiscrMonitor(tf.keras.callbacks.Callback):
 
     def __init__(self, monitor='gen_loss', patience=10, cooldown=0, min_delta=1e-4):

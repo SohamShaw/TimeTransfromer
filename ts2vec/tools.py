@@ -1,6 +1,7 @@
 import numpy as np
 import tensorflow as tf
-from keras.utils import io_utils
+#from keras.utils import io_utils
+from tensorflow.keras import utils
 from tensorflow.keras import backend as K
 from tensorflow.python.platform import tf_logging as logging
 
